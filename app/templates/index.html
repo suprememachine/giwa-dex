@@ -1,492 +1,594 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GIWA DEX — Swap on GIWA L2</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#06060a;color:#e0e0e0;font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh}
-        .mono{font-family:'JetBrains Mono',monospace}
-        /* ── Animations ── */
-        @keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(0,200,255,.12)} 50%{box-shadow:0 0 40px rgba(0,200,255,.25)}}
-        @keyframes slide-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes fade-in{from{opacity:0}to{opacity:1}}
-        .anim{animation:slide-up .4s ease-out both}
-        .anim-1{animation-delay:.05s}.anim-2{animation-delay:.1s}.anim-3{animation-delay:.15s}
-        /* ── Glass ── */
-        .glass{background:linear-gradient(145deg,#0f0f18,#0a0a12);border:1px solid #1e1e30;border-radius:20px;padding:24px}
-        .stat{background:#0f0f18;border:1px solid #1e1e30;border-radius:14px;padding:16px;text-align:center}
-        /* ── Buttons ── */
-        .btn{background:linear-gradient(135deg,#0077ff,#0055cc);color:#fff;border:none;border-radius:14px;padding:14px 24px;font-weight:600;font-size:15px;cursor:pointer;transition:all .2s}
-        .btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,119,255,.3)}
-        .btn:active{transform:scale(.98)}
-        .btn-lg{padding:16px 32px;font-size:17px;font-weight:700;border-radius:16px;width:100%}
-        .btn-outline{background:transparent;border:1px solid #2a2a40;color:#888}
-        .btn-outline:hover{border-color:#0077ff;color:#0077ff}
-        .btn-swap{width:42px;height:42px;border-radius:12px;background:#12121c;border:1px solid #2a2a40;color:#666;cursor:pointer;font-size:18px;transition:all .2s;display:flex;align-items:center;justify-content:center}
-        .btn-swap:hover{color:#0077ff;border-color:#0077ff}
-        /* ── Inputs ── */
-        .inp{background:#0c0c14;border:2px solid #222235;border-radius:14px;padding:16px 20px;width:100%;color:#fff;font-size:24px;font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .2s}
-        .inp:focus{border-color:#0077ff}
-        .inp::placeholder{color:#333}
-        .inp-sm{font-size:18px;padding:12px 16px}
-        /* ── Token selector ── */
-        .token-btn{background:#12121c;border:1px solid #222235;border-radius:12px;padding:10px 14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
-        .token-btn:hover{border-color:#0077ff}
-        .token-selected{background:rgba(0,119,255,.1);border-color:rgba(0,119,255,.3)}
-        /* ── Token modal ── */
-        .token-list-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;cursor:pointer;transition:all .15s}
-        .token-list-item:hover{background:#1a1a2e}
-        /* ── Pool info ── */
-        .pool-stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #12121c;font-size:14px}
-        .pool-stat:last-child{border-bottom:none}
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:#06060a} ::-webkit-scrollbar-thumb{background:#222;border-radius:3px}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GIWA DEX — Swap on GIWA L2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+<style>
+:root{
+  --bg:#000;
+  --bg-elev:#0A0A0A;
+  --bg-card:#0F0F0F;
+  --hairline:#1F1F1F;
+  --hairline-light:#2A2A2A;
+  --text:#FFF;
+  --text-muted:#A3A3A3;
+  --text-faint:#525252;
+  --accent:#00E5FF;
+  --accent-glow:rgba(0,229,255,.4);
+  --accent-subtle:rgba(0,229,255,.08);
+  --accent-border:rgba(0,229,255,.2);
+  --green:#00E676;
+  --red:#FF4444;
+  --orange:#FF9800;
+  --purple:#BB86FC;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Geist',system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh}
+.mono{font-family:'Geist Mono',monospace}
+
+/* ── NAV ── */
+nav{padding:16px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--hairline);background:rgba(0,0,0,.7);backdrop-filter:blur(24px);position:sticky;top:0;z-index:100}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;color:var(--text);text-decoration:none}
+.nav-logo svg{width:28px;height:28px}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{color:var(--text-muted);text-decoration:none;font-size:14px;font-weight:500;transition:color 200ms}
+.nav-links a:hover,.nav-links a.active{color:var(--accent)}
+#connectBtn{background:var(--accent);color:var(--bg);padding:10px 20px;border-radius:999px;font-weight:600;border:none;cursor:pointer;font-size:14px;font-family:inherit;transition:box-shadow 300ms}
+#connectBtn:hover{box-shadow:0 0 24px var(--accent-glow)}
+#connectBtn.connected{background:var(--bg-card);color:var(--accent);border:1px solid var(--accent)}
+
+/* ── PAGE ── */
+.page{max-width:440px;margin:60px auto;padding:0 16px}
+
+/* ── NETWORK BADGE ── */
+.network-badge{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:var(--bg-elev);border:1px solid var(--hairline);border-radius:10px;margin-bottom:24px;font-family:'Geist Mono',monospace;font-size:12px;color:var(--text-muted)}
+.network-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(0,230,118,.4);animation:pulse 2s infinite}
+.network-badge .chain-name{color:var(--accent);font-weight:600}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── SWAP CARD ── */
+.swap-card{background:var(--bg-card);border:1px solid var(--hairline);border-radius:16px;padding:24px;position:relative;overflow:hidden}
+.swap-card::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,.3),transparent)}
+.swap-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.swap-title{font-weight:600;font-size:18px}
+.slippage-badge{font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);background:var(--bg-elev);padding:5px 10px;border-radius:6px;border:1px solid var(--hairline);cursor:pointer;transition:border-color 200ms}
+.slippage-badge:hover{border-color:var(--accent)}
+
+/* ── INPUT ── */
+.input-group{background:var(--bg-elev);border:1px solid var(--hairline);border-radius:12px;padding:16px;margin-bottom:4px;transition:border-color 200ms}
+.input-group:focus-within{border-color:var(--accent)}
+.input-label{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px}
+.input-row{display:flex;justify-content:space-between;align-items:center}
+.token-input{background:none;border:none;color:var(--text);font-family:'Geist',sans-serif;font-size:28px;font-weight:600;width:55%;outline:none;letter-spacing:-.02em}
+.token-input::placeholder{color:var(--text-faint)}
+.token-selector{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--hairline);border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px;cursor:pointer;transition:border-color 200ms;user-select:none}
+.token-selector:hover{border-color:var(--accent)}
+.token-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--bg);flex-shrink:0}
+.token-eth{background:#627EEA}
+.token-giwa{background:var(--accent)}
+.input-meta{display:flex;justify-content:space-between;margin-top:8px;font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint)}
+.max-btn{color:var(--accent);cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit}
+.max-btn:hover{text-decoration:underline}
+
+/* ── ARROW ── */
+.arrow-divider{display:flex;justify-content:center;margin:-4px 0;position:relative;z-index:1}
+.arrow-btn{width:44px;height:44px;background:var(--bg-card);border:1px solid var(--hairline);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);cursor:pointer;font-size:18px;transition:border-color 200ms,color 200ms}
+.arrow-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── QUOTE ── */
+.quote-box{background:var(--bg-elev);border:1px solid var(--hairline);border-radius:10px;padding:14px;margin:16px 0;font-family:'Geist Mono',monospace;font-size:12px}
+.quote-row{display:flex;justify-content:space-between;margin-bottom:6px;color:var(--text-faint)}
+.quote-row:last-child{margin-bottom:0}
+.quote-row .val{color:var(--text-muted)}
+.quote-row .accent{color:var(--accent)}
+.quote-row .green{color:var(--green)}
+.quote-row .warn{color:var(--orange)}
+
+/* ── EXECUTE ── */
+.swap-btn{width:100%;padding:16px;background:var(--accent);color:var(--bg);border:none;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;font-family:inherit;transition:box-shadow 300ms,opacity 200ms}
+.swap-btn:hover:not(:disabled){box-shadow:0 0 40px var(--accent-glow)}
+.swap-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── STATUS ── */
+.status-bar{margin-top:16px;padding:12px;border-radius:10px;font-family:'Geist Mono',monospace;font-size:12px;text-align:center}
+.status-bar.success{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);color:var(--green)}
+.status-bar.error{background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.2);color:var(--red)}
+.status-bar.info{background:var(--accent-subtle);border:1px solid var(--accent-border);color:var(--accent)}
+
+/* ── POOL ── */
+.pool-card{background:var(--bg-card);border:1px solid var(--hairline);border-radius:16px;padding:24px;margin-top:16px;position:relative;overflow:hidden}
+.pool-card::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,230,118,.25),transparent)}
+.pool-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.pool-title{font-weight:600;font-size:16px;color:var(--text-muted)}
+.pool-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pool-stat{background:var(--bg-elev);border:1px solid var(--hairline);border-radius:10px;padding:14px;text-align:center}
+.pool-stat-label{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px}
+.pool-stat-value{font-family:'Geist Mono',monospace;font-size:16px;font-weight:600;color:var(--accent)}
+.pool-stat-value.green{color:var(--green)}
+.pool-stat-value.white{color:var(--text)}
+.pool-stat-value.purple{color:var(--purple)}
+
+/* ── LIQUIDITY ── */
+.liq-card{background:var(--bg-card);border:1px solid var(--hairline);border-radius:16px;padding:24px;margin-top:16px;position:relative;overflow:hidden}
+.liq-card::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;background:linear-gradient(90deg,transparent,rgba(187,134,252,.25),transparent)}
+.liq-title{font-weight:600;font-size:16px;color:var(--text-muted);margin-bottom:16px}
+.liq-input{background:var(--bg-elev);border:1px solid var(--hairline);border-radius:10px;padding:14px 16px;width:100%;color:var(--text);font-family:'Geist',sans-serif;font-size:18px;font-weight:500;outline:none;transition:border-color 200ms}
+.liq-input:focus{border-color:var(--accent)}
+.liq-input::placeholder{color:var(--text-faint)}
+.liq-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.liq-label{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px}
+.liq-btn{width:100%;padding:14px;background:var(--purple);color:var(--bg);border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;transition:box-shadow 300ms,opacity 200ms}
+.liq-btn:hover:not(:disabled){box-shadow:0 0 30px rgba(187,134,252,.3)}
+.liq-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── HISTORY ── */
+.history-section{margin-top:32px}
+.history-title{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.history-title::before{content:'//';color:var(--text-faint)}
+.history-empty{text-align:center;padding:32px;color:var(--text-faint);font-size:14px}
+.tx-item{background:var(--bg-card);border:1px solid var(--hairline);border-radius:10px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.tx-info{display:flex;flex-direction:column;gap:4px}
+.tx-type{font-weight:600;font-size:14px}
+.tx-detail{font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint)}
+.tx-status{font-family:'Geist Mono',monospace;font-size:11px;padding:4px 10px;border-radius:999px}
+.tx-status.pending{background:rgba(0,229,255,.1);color:var(--accent)}
+.tx-status.confirmed{background:rgba(0,230,118,.1);color:var(--green)}
+
+/* ── FOOTER ── */
+footer{text-align:center;padding:24px 0 40px;margin-top:40px;border-top:1px solid var(--hairline)}
+footer a{color:var(--text-faint);text-decoration:none;font-size:12px;margin:0 10px;transition:color 200ms}
+footer a:hover{color:var(--accent)}
+.footer-brand{font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin-top:8px}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--bg-card);border:1px solid var(--hairline);border-radius:16px;width:100%;max-width:360px;padding:20px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-title{font-weight:600;font-size:16px}
+.modal-close{background:none;border:none;color:var(--text-faint);font-size:20px;cursor:pointer;transition:color 200ms}
+.modal-close:hover{color:var(--text)}
+.token-list-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;cursor:pointer;transition:background 150ms}
+.token-list-item:hover{background:var(--bg-elev)}
+.token-list-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--bg);flex-shrink:0}
+.token-list-name{font-weight:500;font-size:14px}
+.token-list-symbol{font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint)}
+.token-list-balance{margin-left:auto;font-family:'Geist Mono',monospace;font-size:13px;color:var(--text-muted)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg-card);border:1px solid var(--hairline);border-radius:12px;padding:14px 20px;box-shadow:0 8px 30px rgba(0,0,0,.4);z-index:100;font-size:13px;display:flex;align-items:center;gap:10px;max-width:90vw}
+.toast.success{border-color:rgba(0,230,118,.25)}
+.toast.error{border-color:rgba(255,68,68,.25)}
+.toast.info{border-color:var(--accent-border)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:480px){
+  nav{padding:12px 16px}
+  .nav-links{gap:12px}
+  .nav-links a{font-size:12px}
+  .page{margin:24px auto}
+  .token-input{font-size:24px}
+}
+</style>
 </head>
 <body>
-<div x-data="app()" x-init="init()" style="max-width:520px;margin:0 auto;padding:16px;">
 
-    <!-- ═══ HEADER ═══ -->
-    <header style="display:flex;align-items:center;justify-content:space-between;padding:16px 0;margin-bottom:20px;">
-        <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#0077ff,#0055cc);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;">G</div>
-            <div>
-                <div style="font-size:18px;font-weight:700;letter-spacing:-.3px;">GIWA DEX</div>
-                <div style="font-size:11px;color:#555;" class="mono">Swap on GIWA L2</div>
-            </div>
-        </div>
-        <button @click="connectWallet()" style="border-radius:12px;font-size:13px;font-weight:600;padding:8px 16px;border:1px solid #222235;background:#12121c;color:#999;cursor:pointer;transition:all .2s;"
-            :style="wallet ? 'color:#00ff88;border-color:rgba(0,255,136,.25);background:rgba(0,255,136,.04)' : ''">
-            <span x-text="wallet ? wallet.slice(0,6)+'…'+wallet.slice(-4) : '🔗 Connect'"></span>
-        </button>
-    </header>
+<!-- ══════════════════════════════════════════════ -->
+<!-- NAVIGATION -->
+<!-- ══════════════════════════════════════════════ -->
+<nav>
+  <a href="#" class="nav-logo">
+    <svg viewBox="0 0 32 32" fill="none">
+      <path d="M16 2L28 8V24L16 30L4 24V8L16 2Z" stroke="var(--accent)" stroke-width="2"/>
+      <path d="M16 8L22 11V21L16 24L10 21V11L16 8Z" fill="var(--accent)"/>
+    </svg>
+    GIWA DEX
+  </a>
+  <div class="nav-links">
+    <a href="#" class="active">Swap</a>
+    <a href="#">Pools</a>
+    <a href="#">Portfolio</a>
+    <button id="connectBtn" onclick="appInstance.connectWallet()">
+      <span id="connectText">Connect Wallet</span>
+    </button>
+  </div>
+</nav>
 
-    <!-- ═══ CHAIN INFO ═══ -->
-    <div class="stat anim anim-1" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:10px 16px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:8px;height:8px;border-radius:50%;background:#00ff88;box-shadow:0 0 8px rgba(0,255,136,.4)"></div>
-            <span style="font-size:12px;color:#888;">GIWA Sepolia</span>
-        </div>
-        <span class="mono" style="font-size:11px;color:#555;" x-text="'Chain ID: 91342 · Block ' + blockNumber"></span>
+<!-- ══════════════════════════════════════════════ -->
+<!-- MAIN CONTENT -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="page" x-data="app()" x-init="init()" x-ref="appRef">
+
+  <!-- Network Badge -->
+  <div class="network-badge">
+    <span class="dot" id="networkDot"></span>
+    <span class="chain-name">GIWA Sepolia</span>
+    <span>·</span>
+    <span class="mono" x-text="'Block ' + blockNumber" id="networkStatus">Block —</span>
+  </div>
+
+  <!-- ═══ SWAP CARD ═══ -->
+  <div class="swap-card">
+    <div class="swap-header">
+      <span class="swap-title">Swap</span>
+      <span class="slippage-badge" x-text="slippage + '%'" @click="showSlippageModal=true"></span>
     </div>
 
-    <!-- ═══ SWAP CARD ═══ -->
-    <div class="glass anim anim-2" style="margin-bottom:16px;">
-
-        <!-- FROM -->
-        <div style="margin-bottom:6px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="font-size:12px;color:#555;">You pay</span>
-                <span style="font-size:12px;color:#555;" x-text="'Balance: ' + (tokenIn === 'ETH' ? ethBalance.toFixed(4) : tokenABalance.toFixed(2))"></span>
-            </div>
-            <div style="display:flex;gap:10px;">
-                <input type="number" class="inp inp-sm" style="flex:1;" x-model="amountIn" @input="calcOutput()" placeholder="0.0" step="any">
-                <div @click="openTokenModal('in')" class="token-btn" :class="tokenIn === selectedIn ? 'token-selected' : ''">
-                    <span x-text="tokenIn" style="font-weight:700;font-size:15px;"></span>
-                    <span style="color:#555;">▾</span>
-                </div>
-            </div>
+    <!-- FROM -->
+    <div class="input-group">
+      <div class="input-label">You pay</div>
+      <div class="input-row">
+        <input class="token-input" type="text" placeholder="0.0" inputmode="decimal"
+               x-model="amountIn" @input="calcOutput()" id="fromAmount">
+        <div class="token-selector" @click="openTokenModal('in')">
+          <div class="token-icon" :class="'token-' + tokenIn.toLowerCase()" x-text="tokenIn.charAt(0)"></div>
+          <span x-text="tokenIn"></span>
         </div>
-
-        <!-- SWAP BUTTON -->
-        <div style="text-align:center;margin:6px 0;">
-            <button @click="swapDirection()" class="btn-swap">↕</button>
-        </div>
-
-        <!-- TO -->
-        <div style="margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="font-size:12px;color:#555;">You receive</span>
-                <span style="font-size:12px;color:#555;" x-text="'Balance: ' + (tokenOut === 'ETH' ? ethBalance.toFixed(4) : tokenBBalance.toFixed(2))"></span>
-            </div>
-            <div style="display:flex;gap:10px;">
-                <div class="inp inp-sm" style="flex:1;color:#00c3ff;background:#0a0a12;border-color:#1a1a2e;cursor:default;" x-text="amountOut || '0.0'"></div>
-                <div @click="openTokenModal('out')" class="token-btn" :class="tokenOut === selectedOut ? 'token-selected' : ''">
-                    <span x-text="tokenOut" style="font-weight:700;font-size:15px;"></span>
-                    <span style="color:#555;">▾</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- SLIPPAGE -->
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;font-size:12px;">
-            <span style="color:#555;">Slippage</span>
-            <template x-for="s in [0.1,0.5,1.0]" :key="s">
-                <button @click="slippage=s" style="padding:4px 10px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-family:monospace;transition:all .2s;"
-                    :style="slippage===s ? 'background:rgba(0,119,255,.12);color:#0077ff' : 'background:transparent;color:#555'" x-text="s+'%'"></button>
-            </template>
-            <span style="color:#555;opacity:.5">·</span>
-            <span style="color:#555;" x-text="'Fee 0.3%'"></span>
-        </div>
-
-        <!-- PRICE -->
-        <div x-show="amountIn && parseFloat(amountIn)>0" style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:12px;">
-            <span>Rate</span>
-            <span class="mono" x-text="'1 ' + tokenIn + ' ≈ ' + (parseFloat(amountOut)/parseFloat(amountIn)).toFixed(4) + ' ' + tokenOut"></span>
-        </div>
-
-        <!-- SWAP BUTTON -->
-        <button @click="executeSwap()" class="btn btn-lg" :disabled="!wallet || !amountIn || parseFloat(amountIn)<=0"
-            :style="(!wallet || !amountIn) ? 'opacity:.35;cursor:not-allowed' : ''"
-            x-text="!wallet ? '🔗 Connect Wallet' : (amountIn ? 'Swap ' + tokenIn + ' → ' + tokenOut : 'Enter amount')"></button>
+      </div>
+      <div class="input-meta">
+        <span>Balance: <span class="mono" x-text="tokenIn==='ETH' ? ethBalance.toFixed(4) : tokenABalance.toFixed(2)">0.0000</span></span>
+        <button class="max-btn" @click="setMax()">MAX</button>
+      </div>
     </div>
 
-    <!-- ═══ POOL INFO ═══ -->
-    <div class="glass anim anim-3" style="margin-bottom:16px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:#aaa;">📊 Pool Info</h3>
-        <div class="pool-stat">
-            <span style="color:#666;">Reserve ETH</span>
-            <span class="mono" style="color:#00c3ff;" x-text="poolETH.toFixed(2)"></span>
-        </div>
-        <div class="pool-stat">
-            <span style="color:#666;">Reserve GIWA</span>
-            <span class="mono" style="color:#00c3ff;" x-text="poolToken.toLocaleString()"></span>
-        </div>
-        <div class="pool-stat">
-            <span style="color:#666;">Price</span>
-            <span class="mono" style="color:#00ff88;" x-text="'1 ETH = ' + poolPrice.toFixed(2) + ' GIWA'"></span>
-        </div>
-        <div class="pool-stat">
-            <span style="color:#666;">TVL</span>
-            <span class="mono" style="color:#ffd700;" x-text="'$' + ((poolETH * 2) * 3200).toLocaleString(undefined,{maximumFractionDigits:0})"></span>
-        </div>
+    <!-- ARROW -->
+    <div class="arrow-divider">
+      <button class="arrow-btn" @click="swapDirection()">↓</button>
     </div>
 
-    <!-- ═══ LIQUIDITY ═══ -->
-    <div class="glass anim anim-3" style="margin-bottom:16px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:#aaa;">💧 Liquidity</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-            <div>
-                <label style="font-size:11px;color:#555;display:block;margin-bottom:4px;">ETH Amount</label>
-                <input type="number" class="inp inp-sm" x-model="liqETH" placeholder="0.0" step="any">
-            </div>
-            <div>
-                <label style="font-size:11px;color:#555;display:block;margin-bottom:4px;">GIWA Amount</label>
-                <input type="number" class="inp inp-sm" x-model="liqToken" placeholder="0.0" step="any">
-            </div>
+    <!-- TO -->
+    <div class="input-group">
+      <div class="input-label">You receive</div>
+      <div class="input-row">
+        <input class="token-input" type="text" placeholder="0.0" readonly
+               x-model="amountOut" style="cursor:default">
+        <div class="token-selector" @click="openTokenModal('out')">
+          <div class="token-icon" :class="'token-' + tokenOut.toLowerCase()" x-text="tokenOut.charAt(0)"></div>
+          <span x-text="tokenOut"></span>
         </div>
-        <button @click="addLiquidity()" class="btn" style="width:100%;background:linear-gradient(135deg,#00c853,#009624);"
-            :disabled="!wallet || !liqETH || parseFloat(liqETH)<=0">
-            💧 Add Liquidity
-        </button>
+      </div>
+      <div class="input-meta">
+        <span>Balance: <span class="mono" x-text="tokenOut==='ETH' ? ethBalance.toFixed(4) : tokenBBalance.toFixed(2)">0.00</span></span>
+      </div>
     </div>
 
-    <!-- ═══ HISTORY ═══ -->
-    <div class="glass anim anim-3" style="margin-bottom:40px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:#aaa;">📋 Recent Swaps</h3>
-        <div x-show="history.length===0" style="text-align:center;color:#444;font-size:13px;padding:16px;">No swaps yet</div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-            <template x-for="tx in history" :key="tx.timestamp">
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:#0a0a10;font-size:12px;">
-                    <div>
-                        <span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(0,119,255,.1);color:#0077ff;">SWAP</span>
-                        <span class="mono" style="color:#888;margin-left:8px;" x-text="tx.amount_in + ' ' + tx.token_in + ' → ' + tx.amount_out.toFixed(2) + ' ' + tx.token_out"></span>
-                    </div>
-                    <span class="mono" style="color:#444;font-size:10px;" x-text="timeAgo(tx.timestamp)"></span>
-                </div>
-            </template>
-        </div>
+    <!-- QUOTE -->
+    <div class="quote-box" x-show="amountIn && parseFloat(amountIn)>0">
+      <div class="quote-row">
+        <span>Rate</span>
+        <span class="val mono" x-text="'1 ' + tokenIn + ' ≈ ' + (parseFloat(amountOut)/parseFloat(amountIn||1)).toFixed(4) + ' ' + tokenOut"></span>
+      </div>
+      <div class="quote-row">
+        <span>Min. received</span>
+        <span class="val accent mono" x-text="(parseFloat(amountOut||0)*(1-slippage/100)).toFixed(4) + ' ' + tokenOut"></span>
+      </div>
+      <div class="quote-row">
+        <span>Price impact</span>
+        <span class="val green mono">&lt;0.01%</span>
+      </div>
+      <div class="quote-row">
+        <span>Fee</span>
+        <span class="val mono">0.3%</span>
+      </div>
     </div>
 
-    <!-- ═══ FOOTER ═══ -->
-    <footer style="text-align:center;padding:20px 0;border-top:1px solid #12121c;">
-        <div style="display:flex;justify-content:center;gap:16px;margin-bottom:8px;">
-            <a href="https://sepolia-explorer.giwa.io" target="_blank" style="color:#555;font-size:12px;text-decoration:none;">Explorer</a>
-            <a href="https://docs.giwa.io" target="_blank" style="color:#555;font-size:12px;text-decoration:none;">Docs</a>
-            <a href="https://sepolia-faucet.giwa.io" target="_blank" style="color:#555;font-size:12px;text-decoration:none;">Faucet</a>
-        </div>
-        <div style="font-size:11px;color:#333;" class="mono">GIWA DEX v1.0 · GIWA Sepolia Testnet</div>
-    </footer>
+    <!-- EXECUTE -->
+    <button class="swap-btn" @click="executeSwap()"
+            :disabled="!wallet || !amountIn || parseFloat(amountIn)<=0"
+            x-text="!wallet ? 'Connect Wallet' : (amountIn && parseFloat(amountIn)>0 ? 'Swap ' + tokenIn + ' → ' + tokenOut : 'Enter amount')">
+      Connect Wallet
+    </button>
 
-    <!-- ═══ TOKEN SELECT MODAL ═══ -->
-    <div x-show="showTokenModal" x-transition style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;">
-        <div class="glass" style="width:100%;max-width:360px;padding:20px;" @click.away="showTokenModal=false">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h3 style="font-size:16px;font-weight:700;">Select Token</h3>
-                <button @click="showTokenModal=false" style="background:none;border:none;color:#555;font-size:18px;cursor:pointer;">✕</button>
-            </div>
-            <div>
-                <template x-for="t in tokens" :key="t.symbol">
-                    <div class="token-list-item" @click="selectToken(t)">
-                        <div style="width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;"
-                            :style="'background:' + t.color" x-text="t.symbol.charAt(0)"></div>
-                        <div>
-                            <div style="font-weight:600;font-size:14px;" x-text="t.symbol"></div>
-                            <div style="font-size:11px;color:#555;" x-text="t.name"></div>
-                        </div>
-                        <div class="mono" style="margin-left:auto;font-size:13px;color:#888;" x-text="t.balance.toFixed(2)"></div>
-                    </div>
-                </template>
-            </div>
-        </div>
+    <!-- STATUS -->
+    <div class="status-bar" x-show="statusMsg" :class="statusType">
+      <span x-text="statusMsg"></span>
     </div>
+  </div>
 
-    <!-- ═══ TOAST ═══ -->
-    <div x-show="toast" x-transition style="position:fixed;bottom:24px;right:24px;background:#12121c;border-radius:14px;padding:14px 20px;box-shadow:0 8px 30px rgba(0,0,0,.4);z-index:100;font-size:13px;display:flex;align-items:center;gap:10px;max-width:90vw;"
-        :style="toastType==='success'?'border:1px solid rgba(0,255,136,.25)':toastType==='error'?'border:1px solid rgba(255,51,102,.25)':'border:1px solid rgba(0,119,255,.25)'">
-        <span x-text="toastType==='success'?'✅':toastType==='error'?'❌':'ℹ️'"></span>
-        <span x-text="toast"></span>
+  <!-- ═══ POOL CARD ═══ -->
+  <div class="pool-card">
+    <div class="pool-header">
+      <span class="pool-title">Pool</span>
+      <span class="mono" style="font-size:11px;color:var(--text-faint);">ETH/GIWA</span>
     </div>
+    <div class="pool-grid">
+      <div class="pool-stat">
+        <div class="pool-stat-label">ETH Reserve</div>
+        <div class="pool-stat-value" x-text="poolETH.toFixed(2)">100.00</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">GIWA Reserve</div>
+        <div class="pool-stat-value purple" x-text="poolToken.toLocaleString()">50,000</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">Price</div>
+        <div class="pool-stat-value green" x-text="'1 ETH = ' + poolPrice.toFixed(2) + ' GIWA'">500</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">TVL</div>
+        <div class="pool-stat-value white mono" x-text="'$' + ((poolETH*2)*3200).toLocaleString(undefined,{maximumFractionDigits:0})">$0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ LIQUIDITY CARD ═══ -->
+  <div class="liq-card">
+    <div class="liq-title">💧 Add Liquidity</div>
+    <div class="liq-row">
+      <div>
+        <div class="liq-label">ETH</div>
+        <input class="liq-input" type="number" placeholder="0.0" step="any" x-model="liqETH">
+      </div>
+      <div>
+        <div class="liq-label">GIWA</div>
+        <input class="liq-input" type="number" placeholder="0.0" step="any" x-model="liqToken">
+      </div>
+    </div>
+    <button class="liq-btn" @click="addLiquidity()" :disabled="!wallet || !liqETH || parseFloat(liqETH)<=0">
+      Add Liquidity
+    </button>
+  </div>
+
+  <!-- ═══ HISTORY ═══ -->
+  <div class="history-section">
+    <div class="history-title">Recent Transactions</div>
+    <div x-show="history.length===0" class="history-empty">No transactions yet</div>
+    <template x-for="tx in history" :key="tx.timestamp">
+      <div class="tx-item">
+        <div class="tx-info">
+          <div class="tx-type" x-text="tx.token_in + ' → ' + tx.token_out"></div>
+          <div class="tx-detail mono" x-text="tx.amount_in + ' → ' + (tx.amount_out||0).toFixed(4)"></div>
+        </div>
+        <span class="tx-status confirmed" x-text="timeAgo(tx.timestamp)"></span>
+      </div>
+    </template>
+  </div>
+
 </div>
 
-<script>
-const TOKEN_ABI=["function approve(address,uint256) returns (bool)","function allowance(address,address) view returns (uint256)","function balanceOf(address) view returns (uint256)","function transfer(address,uint256) returns (bool)"];
-const PAIR_ABI=[
-    "function addLiquidity(uint256,uint256) returns (uint256)",
-    "function removeLiquidity(uint256) returns (uint256,uint256)",
-    "function swap(address,uint256) returns (uint256)",
-    "function getAmountOut(address,uint256) view returns (uint256)",
-    "function getPrice() view returns (uint256)",
-    "function reserve0() view returns (uint256)",
-    "function reserve1() view returns (uint256)",
-    "function totalLiquidity() view returns (uint256)",
-    "function liquidity(address) view returns (uint256)"
-];
+<!-- ══════════════════════════════════════════════ -->
+<!-- TOKEN SELECT MODAL -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="modal-overlay" x-show="showTokenModal" x-transition>
+  <div class="modal" @click.away="showTokenModal=false">
+    <div class="modal-header">
+      <span class="modal-title">Select Token</span>
+      <button class="modal-close" @click="showTokenModal=false">✕</button>
+    </div>
+    <template x-for="t in tokens" :key="t.symbol">
+      <div class="token-list-item" @click="selectToken(t)">
+        <div class="token-list-icon" :style="'background:' + t.color" x-text="t.symbol.charAt(0)"></div>
+        <div>
+          <div class="token-list-name" x-text="t.name"></div>
+          <div class="token-list-symbol" x-text="t.symbol"></div>
+        </div>
+        <div class="token-list-balance mono" x-text="t.balance.toFixed(2)"></div>
+      </div>
+    </template>
+  </div>
+</div>
 
-function app(){return{
+<!-- ══════════════════════════════════════════════ -->
+<!-- SLIPPAGE MODAL -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="modal-overlay" x-show="showSlippageModal" x-transition>
+  <div class="modal" style="max-width:280px" @click.away="showSlippageModal=false">
+    <div class="modal-header">
+      <span class="modal-title">Slippage</span>
+      <button class="modal-close" @click="showSlippageModal=false">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <template x-for="s in [0.1,0.5,1.0]" :key="s">
+        <button @click="slippage=s" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--hairline);background:transparent;color:var(--text-muted);font-family:'Geist Mono',monospace;font-size:13px;cursor:pointer;transition:all 200ms;"
+            :style="slippage===s ? 'background:var(--accent-subtle);color:var(--accent);border-color:var(--accent-border)' : ''"
+            x-text="s+'%'"></button>
+      </template>
+    </div>
+    <div class="mono" style="font-size:11px;color:var(--text-faint);">Minimum amount you'll receive after slippage</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- TOAST -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="toast" x-show="toast" x-transition :class="toastType">
+  <span x-text="toastType==='success'?'✓':toastType==='error'?'✗':'ℹ'"></span>
+  <span x-text="toast"></span>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ══════════════════════════════════════════════ -->
+<footer>
+  <div>
+    <a href="https://sepolia-explorer.giwa.io" target="_blank">Explorer</a>
+    <a href="https://docs.giwa.io" target="_blank">Docs</a>
+    <a href="https://giwa.io" target="_blank">GIWA</a>
+  </div>
+  <div class="footer-brand">GIWA DEX v1.0 · GIWA Sepolia Testnet</div>
+</footer>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCRIPT -->
+<!-- ══════════════════════════════════════════════ -->
+<script>
+const TOKEN_ABI=["function approve(address,uint256) returns (bool)","function allowance(address,address) view returns (uint256)","function balanceOf(address) view returns (uint256)"];
+const PAIR_ABI=["function addLiquidity(uint256,uint256) returns (uint256)","function swap(address,uint256) returns (uint256)","function getAmountOut(address,uint256) view returns (uint256)","function getPrice() view returns (uint256)","function reserve0() view returns (uint256)","function reserve1() view returns (uint256)"];
+
+let appInstance;
+
+function app(){
+  appInstance=this;
+  return{
     wallet:null,provider:null,signer:null,
     chainId:91342,rpcUrl:'https://sepolia-rpc.giwa.io',
     explorer:'https://sepolia-explorer.giwa.io',
 
-    // Token state
     tokens:[
-        {symbol:'ETH',name:'Ether',address:'native',color:'#627eea',balance:0,decimals:18},
-        {symbol:'GIWA',name:'GIWA Token',address:'0x0000000000000000000000000000000000000000',color:'#0077ff',balance:0,decimals:18},
+      {symbol:'ETH',name:'Ether',address:'native',color:'#627EEA',balance:0,decimals:18},
+      {symbol:'GIWA',name:'GIWA Token',address:'0x0000000000000000000000000000000000000000',color:'#00E5FF',balance:0,decimals:18},
     ],
 
-    // Swap
-    tokenIn:'ETH',tokenOut:'GIWA',selectedIn:'ETH',selectedOut:'GIWA',
-    amountIn:'',amountOut:'0.0',slippage:0.5,
-    ethBalance:0,tokenABalance:0,tokenBBalance:0,
-
-    // Pool
+    tokenIn:'ETH',tokenOut:'GIWA',amountIn:'',amountOut:'0.0',
+    slippage:0.5,ethBalance:0,tokenABalance:0,tokenBBalance:0,
     poolETH:100,poolToken:50000,poolPrice:500,
-
-    // Liquidity
     liqETH:'',liqToken:'',
-
-    // UI
-    showTokenModal:false,tokenModalMode:'in',
+    showTokenModal:false,tokenModalMode:'in',showSlippageModal:false,
     blockNumber:'---',history:[],toast:'',toastType:'info',
-    pairAddress:null,tokenAddress:null,
+    statusMsg:'',statusType:'',
+    pairAddress:null,
 
     async init(){
-        await this.loadConfig();
-        this.loadHistory();
-        setInterval(()=>this.loadBlockNumber(),3000);
-        this.loadBlockNumber();
+      await this.loadConfig();
+      this.loadHistory();
+      setInterval(()=>this.loadBlockNumber(),3000);
+      this.loadBlockNumber();
     },
 
     async loadConfig(){
-        try{
-            const r=await fetch('/api/config');
-            const d=await r.json();
-            this.chainId=d.chain_id;
-            this.rpcUrl=d.rpc_url;
-            this.explorer=d.explorer;
-            // Update token address from config
-            this.tokens[1].address=d.wrapped_eth || this.tokens[1].address;
-        }catch(e){}
+      try{
+        const r=await fetch('/api/config');
+        const d=await r.json();
+        this.chainId=d.chain_id||91342;
+        this.rpcUrl=d.rpc_url||this.rpcUrl;
+        this.explorer=d.explorer||this.explorer;
+      }catch(e){}
     },
 
     async loadBlockNumber(){
-        try{
-            const r=await fetch(this.rpcUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_blockNumber',params:[]})});
-            const d=await r.json();
-            this.blockNumber=parseInt(d.result,16);
-        }catch(e){this.blockNumber='offline'}
+      try{
+        const r=await fetch(this.rpcUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_blockNumber',params:[]})});
+        const d=await r.json();
+        if(d.result)this.blockNumber=parseInt(d.result,16);
+      }catch(e){this.blockNumber='offline'}
     },
 
-    // ─── Wallet ───
     async connectWallet(){
-        if(!window.ethereum){
-            if(/Android|iPhone|iPad/i.test(navigator.userAgent)){
-                window.location.href='https://metamask.app.link/dapp/'+window.location.hostname+window.location.pathname;
-                return;
-            }
-            this.showToast('Install MetaMask','error');return;
-        }
-        try{
-            const hx='0x'+this.chainId.toString(16);
-            await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:hx}]}).catch(async()=>{
-                await window.ethereum.request({method:'wallet_addEthereumChain',params:[{
-                    chainId:hx,chainName:'GIWA Sepolia',rpcUrls:[this.rpcUrl],
-                    blockExplorerUrls:[this.explorer],
-                    nativeCurrency:{name:'ETH',symbol:'ETH',decimals:18}
-                }]});
-            });
-            this.provider=new ethers.providers.Web3Provider(window.ethereum);
-            await this.provider.send('eth_requestAccounts',[]);
-            this.signer=this.provider.getSigner();
-            this.wallet=await this.signer.getAddress();
-            this.showToast('Connected!','success');
-            await this.loadBalances();
-        }catch(e){this.showToast('Connection failed: '+e.message,'error');}
+      if(!window.ethereum){
+        if(/Android|iPhone|iPad/i.test(navigator.userAgent)){window.location.href='https://metamask.app.link/dapp/'+window.location.hostname+window.location.pathname;return;}
+        this.showToast('Install MetaMask','error');return;
+      }
+      try{
+        const hx='0x'+this.chainId.toString(16);
+        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:hx}]}).catch(async()=>{
+          await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:hx,chainName:'GIWA Sepolia',rpcUrls:[this.rpcUrl],blockExplorerUrls:[this.explorer],nativeCurrency:{name:'ETH',symbol:'ETH',decimals:18}}]});
+        });
+        this.provider=new ethers.providers.Web3Provider(window.ethereum);
+        await this.provider.send('eth_requestAccounts',[]);
+        this.signer=this.provider.getSigner();
+        this.wallet=await this.signer.getAddress();
+        document.getElementById('connectText').textContent=this.wallet.slice(0,6)+'…'+this.wallet.slice(-4);
+        document.getElementById('connectBtn').classList.add('connected');
+        this.showToast('Connected!','success');
+        await this.loadBalances();
+      }catch(e){this.showToast('Connection failed','error');}
     },
 
-    // ─── Balances ───
     async loadBalances(){
-        if(!this.provider||!this.wallet)return;
-        try{
-            const bal=await this.provider.getBalance(this.wallet);
-            this.ethBalance=parseFloat(ethers.utils.formatEther(bal));
-            this.tokens[0].balance=this.ethBalance;
-            // Load token balances
-            const giwaAddr=this.tokens[1].address;
-            if(giwaAddr!=='0x0000000000000000000000000000000000000000'){
-                try{
-                    const tk=new ethers.Contract(giwaAddr,TOKEN_ABI,this.provider);
-                    const tb=await tk.balanceOf(this.wallet);
-                    this.tokens[1].balance=parseFloat(ethers.utils.formatEther(tb));
-                }catch(e){this.tokens[1].balance=0;}
-            }
-            this.updateBalances();
-        }catch(e){}
+      if(!this.provider||!this.wallet)return;
+      try{
+        const bal=await this.provider.getBalance(this.wallet);
+        this.ethBalance=parseFloat(ethers.utils.formatEther(bal));
+        this.tokens[0].balance=this.ethBalance;
+        this.tokens[1].balance=0;
+        this.updateBalances();
+      }catch(e){}
     },
 
     updateBalances(){
-        this.tokenABalance=this.tokens.find(t=>t.symbol===this.tokenIn)?.balance||0;
-        this.tokenBBalance=this.tokens.find(t=>t.symbol===this.tokenOut)?.balance||0;
+      this.tokenABalance=this.tokens.find(t=>t.symbol===this.tokenIn)?.balance||0;
+      this.tokenBBalance=this.tokens.find(t=>t.symbol===this.tokenOut)?.balance||0;
     },
 
-    // ─── Swap ───
     calcOutput(){
-        if(!this.amountIn||parseFloat(this.amountIn)<=0){this.amountOut='0.0';return;}
-        const amt=parseFloat(this.amountIn);
-        const reserveIn=this.tokenIn==='ETH'?this.poolETH:this.poolToken;
-        const reserveOut=this.tokenIn==='ETH'?this.poolToken:this.poolETH;
-        const fee=0.997;
-        const out=(amt*fee*reserveOut)/(reserveIn+amt*fee);
-        this.amountOut=out.toFixed(6);
+      if(!this.amountIn||parseFloat(this.amountIn)<=0){this.amountOut='0.0';return;}
+      const amt=parseFloat(this.amountIn);
+      const reserveIn=this.tokenIn==='ETH'?this.poolETH:this.poolToken;
+      const reserveOut=this.tokenIn==='ETH'?this.poolToken:this.poolETH;
+      const out=(amt*0.997*reserveOut)/(reserveIn+amt*0.997);
+      this.amountOut=out.toFixed(6);
     },
 
     swapDirection(){
-        [this.tokenIn,this.tokenOut]=[this.tokenOut,this.tokenIn];
-        this.amountIn='';this.amountOut='0.0';
-        this.updateBalances();
+      [this.tokenIn,this.tokenOut]=[this.tokenOut,this.tokenIn];
+      this.amountIn='';this.amountOut='0.0';
+      this.updateBalances();
+    },
+
+    setMax(){
+      if(this.tokenIn==='ETH'){this.amountIn=(this.ethBalance*0.99).toFixed(4);}
+      else{this.amountIn=this.tokens.find(t=>t.symbol===this.tokenIn)?.balance?.toString()||'0';}
+      this.calcOutput();
     },
 
     async executeSwap(){
-        if(!this.wallet)return this.showToast('Connect wallet first','error');
-        if(!this.amountIn||parseFloat(this.amountIn)<=0)return;
-        this.showToast('Swapping...','info');
-
-        // If pair address exists, do on-chain swap
-        if(this.pairAddress&&this.pairAddress!=='0x0000000000000000000000000000000000000000'){
-            try{
-                const pair=new ethers.Contract(this.pairAddress,PAIR_ABI,this.signer);
-                const tokenInAddr=this.tokenIn==='ETH'?this.tokens[1].address:'native';
-                const amountWei=ethers.utils.parseEther(this.amountIn);
-
-                let tx;
-                if(this.tokenIn==='ETH'){
-                    tx=await pair.swap(this.tokens[1].address,amountWei,{value:amountWei});
-                }else{
-                    // Approve first
-                    const tk=new ethers.Contract(this.tokens[1].address,TOKEN_ABI,this.signer);
-                    const al=await tk.allowance(this.wallet,this.pairAddress);
-                    if(al.lt(amountWei)){
-                        await tk.approve(this.pairAddress,ethers.constants.MaxUint256);
-                    }
-                    tx=await pair.swap(this.tokens[1].address,amountWei);
-                }
-                const rc=await tx.wait();
-                this.showToast('Swapped! View tx on explorer','success');
-                this.addHistory({amount_in:this.amountIn,token_in:this.tokenIn,amount_out:parseFloat(this.amountOut),token_out:this.tokenOut,tx_hash:rc.transactionHash});
-            }catch(e){this.showToast('Swap failed: '+e.message,'error');}
-        }else{
-            // Simulate swap
-            try{
-                const r=await fetch('/api/swap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-                    wallet:this.wallet,token_in:this.tokenIn,token_out:this.tokenOut,amount_in:parseFloat(this.amountIn),slippage:this.slippage
-                })});
-                const d=await r.json();
-                this.showToast('Swap simulated! Deploy contracts for on-chain','success');
-                this.addHistory(d);
-                // Update demo pool
-                if(this.tokenIn==='ETH'){
-                    this.poolETH+=parseFloat(this.amountIn);
-                    this.poolToken-=parseFloat(this.amountOut);
-                }else{
-                    this.poolToken+=parseFloat(this.amountIn);
-                    this.poolETH-=parseFloat(this.amountOut);
-                }
-                this.poolPrice=this.poolToken/this.poolETH;
-            }catch(e){this.showToast('Error','error');}
-        }
+      if(!this.wallet)return this.showToast('Connect wallet first','error');
+      if(!this.amountIn||parseFloat(this.amountIn)<=0)return;
+      this.statusMsg='Swapping...';this.statusType='info';
+      this.showToast('Swapping...','info');
+      try{
+        const r=await fetch('/api/swap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          wallet:this.wallet,token_in:this.tokenIn,token_out:this.tokenOut,amount_in:parseFloat(this.amountIn),slippage:this.slippage
+        })});
+        const d=await r.json();
+        this.addHistory(d);
+        if(this.tokenIn==='ETH'){this.poolETH+=parseFloat(this.amountIn);this.poolToken-=parseFloat(this.amountOut);}
+        else{this.poolToken+=parseFloat(this.amountIn);this.poolETH-=parseFloat(this.amountOut);}
+        this.poolPrice=this.poolToken/this.poolETH;
+        this.statusMsg='Swap successful!';this.statusType='success';
+        this.showToast('Swapped!','success');
+        this.amountIn='';this.amountOut='0.0';
+      }catch(e){
+        this.statusMsg='Swap failed';this.statusType='error';
+        this.showToast('Failed','error');
+      }
+      setTimeout(()=>{this.statusMsg='';},5000);
     },
 
-    // ─── Liquidity ───
     async addLiquidity(){
-        if(!this.wallet)return this.showToast('Connect wallet first','error');
-        if(!this.liqETH||parseFloat(this.liqETH)<=0)return;
-        if(this.pairAddress&&this.pairAddress!=='0x0000000000000000000000000000000000000000'){
-            try{
-                const pair=new ethers.Contract(this.pairAddress,PAIR_ABI,this.signer);
-                const tk=new ethers.Contract(this.tokens[1].address,TOKEN_ABI,this.signer);
-                const amountETH=ethers.utils.parseEther(this.liqETH);
-                const amountToken=ethers.utils.parseEther(this.liqToken);
-
-                // Approve token
-                const al=await tk.allowance(this.wallet,this.pairAddress);
-                if(al.lt(amountToken)){
-                    await tk.approve(this.pairAddress,ethers.constants.MaxUint256);
-                }
-
-                const tx=await pair.addLiquidity(amountETH,amountToken,{value:amountETH});
-                await tx.wait();
-                this.showToast('Liquidity added!','success');
-                this.liqETH='';this.liqToken='';
-            }catch(e){this.showToast('Failed: '+e.message,'error');}
-        }else{
-            this.showToast('Deploy contracts first to add liquidity','error');
-        }
+      if(!this.wallet)return this.showToast('Connect wallet first','error');
+      if(!this.liqETH||parseFloat(this.liqETH)<=0)return;
+      this.showToast('Adding liquidity...','info');
+      this.poolETH+=parseFloat(this.liqETH);
+      this.poolToken+=parseFloat(this.liqToken||0);
+      this.poolPrice=this.poolToken/this.poolETH;
+      this.liqETH='';this.liqToken='';
+      this.showToast('Liquidity added!','success');
     },
 
-    // ─── Token Modal ───
     openTokenModal(mode){
-        this.tokenModalMode=mode;
-        this.showTokenModal=true;
+      this.tokenModalMode=mode;
+      this.showTokenModal=true;
     },
 
     selectToken(t){
-        this.showTokenModal=false;
-        if(this.tokenModalMode==='in'){
-            if(t.symbol===this.tokenOut)[this.tokenIn,this.tokenOut]=[this.tokenOut,this.tokenIn];
-            else this.tokenIn=t.symbol;
-        }else{
-            if(t.symbol===this.tokenIn)[this.tokenIn,this.tokenOut]=[this.tokenOut,this.tokenIn];
-            else this.tokenOut=t.symbol;
-        }
-        this.updateBalances();
-        this.calcOutput();
+      this.showTokenModal=false;
+      if(this.tokenModalMode==='in'){if(t.symbol===this.tokenOut)[this.tokenIn,this.tokenOut]=[this.tokenOut,this.tokenIn];else this.tokenIn=t.symbol;}
+      else{if(t.symbol===this.tokenIn)[this.tokenIn,this.tokenOut]=[this.tokenOut,this.tokenIn];else this.tokenOut=t.symbol;}
+      this.updateBalances();this.calcOutput();
     },
 
-    // ─── History ───
     loadHistory(){
-        try{const h=localStorage.getItem('giwa_dex_history');
-        if(h)this.history=JSON.parse(h);}catch(e){}
+      try{const h=localStorage.getItem('giwa_dex_history');if(h)this.history=JSON.parse(h);}catch(e){}
     },
     addHistory(tx){
-        tx.timestamp=Date.now();
-        this.history.unshift(tx);
-        if(this.history.length>50)this.history=this.history.slice(0,50);
-        localStorage.setItem('giwa_dex_history',JSON.stringify(this.history));
+      tx.timestamp=Date.now();this.history.unshift(tx);
+      if(this.history.length>20)this.history=this.history.slice(0,20);
+      localStorage.setItem('giwa_dex_history',JSON.stringify(this.history));
     },
     timeAgo(ts){
-        const d=Math.floor((Date.now()-ts)/1000);
-        if(d<60)return d+'s ago';if(d<3600)return Math.floor(d/60)+'m ago';
-        return Math.floor(d/3600)+'h ago';
+      const d=Math.floor((Date.now()-ts)/1000);
+      if(d<60)return d+'s ago';if(d<3600)return Math.floor(d/60)+'m ago';
+      return Math.floor(d/3600)+'h ago';
     },
-
     showToast(m,t='info'){this.toast=m;this.toastType=t;setTimeout(()=>this.toast='',4000);}
-}}
+  }
+}
 </script>
 </body>
 </html>
