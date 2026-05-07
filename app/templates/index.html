@@ -216,7 +216,14 @@ footer a:hover{color:var(--accent)}
   <div class="swap-card">
     <div class="swap-header">
       <span class="swap-title">Swap</span>
-      <span class="slippage-badge" x-text="slippage + '%'" @click="showSlippageModal=true"></span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--text-faint);">Slippage</span>
+        <template x-for="s in [0.1,0.5,1.0]" :key="s">
+          <button @click="slippage=s" style="padding:3px 8px;border-radius:6px;border:1px solid var(--hairline);background:transparent;color:var(--text-faint);font-family:'Geist Mono',monospace;font-size:11px;cursor:pointer;transition:all 200ms;"
+              :style="slippage===s ? 'background:var(--accent-subtle);color:var(--accent);border-color:var(--accent-border)' : ''"
+              x-text="s+'%'"></button>
+        </template>
+      </div>
     </div>
 
     <!-- FROM -->
@@ -372,24 +379,7 @@ footer a:hover{color:var(--accent)}
   </div>
 </div>
 
-<!-- ═══ SLIPPAGE MODAL ═══ -->
-<div class="modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;cursor:pointer;"
-     x-show="showSlippageModal" x-transition @click="showSlippageModal=false">
-  <div class="modal" style="max-width:280px;cursor:default" @click.stop>
-    <div class="modal-header">
-      <span class="modal-title">Slippage</span>
-      <button class="modal-close" @click="showSlippageModal=false" style="font-size:18px;padding:4px 8px;">✕</button>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <template x-for="s in [0.1,0.5,1.0]" :key="s">
-        <button @click="slippage=s;showSlippageModal=false" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--hairline);background:transparent;color:var(--text-muted);font-family:'Geist Mono',monospace;font-size:13px;cursor:pointer;transition:all 200ms;"
-            :style="slippage===s ? 'background:var(--accent-subtle);color:var(--accent);border-color:var(--accent-border)' : ''"
-            x-text="s+'%'"></button>
-      </template>
-    </div>
-    <div class="mono" style="font-size:11px;color:var(--text-faint);">Minimum amount you'll receive after slippage</div>
-  </div>
-</div>
+<!-- ═══ SLIPPAGE INLINE ═══ -->
 
 <!-- ══════════════════════════════════════════════ -->
 <!-- TOAST -->
